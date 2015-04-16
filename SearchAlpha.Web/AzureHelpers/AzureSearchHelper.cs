@@ -19,7 +19,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace SearchAlpha.Web.Controllers
+namespace SearchAlpha.Web.AzureHelpers
 {
     public class AzureSearchHelper
     {
@@ -51,7 +51,7 @@ namespace SearchAlpha.Web.Controllers
 
         public static HttpResponseMessage SendSearchRequest(HttpClient client, HttpMethod method, Uri uri, string json = null)
         {
-            UriBuilder builder = new UriBuilder(uri);
+            var builder = new UriBuilder(uri);
             string separator = string.IsNullOrWhiteSpace(builder.Query) ? string.Empty : "&";
             builder.Query = builder.Query.TrimStart('?') + separator + ApiVersionString;
 

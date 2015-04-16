@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using System.Collections.Generic;
 using System.Web.Mvc;
+using SearchAlpha.Web.AzureHelpers;
 
 namespace SearchAlpha.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private CatalogSearch _catalogSearch = new CatalogSearch();
+        private readonly CatalogSearch _catalogSearch = new CatalogSearch();
 
         [HttpGet]
         public ActionResult Index()
@@ -20,21 +18,18 @@ namespace SearchAlpha.Web.Controllers
         }
 
         [HttpGet]
-        public ActionResult Search(string q = "")
+        public ActionResult Search(string q = "", string organisationType = null, string sort = null)
         {
-            dynamic result = null;
+            dynamic result;
 
             // If blank search, assume they want to search everything
             if (string.IsNullOrWhiteSpace(q))
                 q = "*";
 
-            result = _catalogSearch.Search(q);
+            result = _catalogSearch.Search(q, organisationType, sort);
             ViewBag.searchString = q;
-            //ViewBag.color = color;
-            //ViewBag.category = category;
-            //ViewBag.priceFrom = priceFrom;
-            //ViewBag.priceTo = priceTo;
-            //ViewBag.sort = sort;
+            ViewBag.organisationType = organisationType;
+            ViewBag.sort = sort;
 
             return View("Index", result);
         }
@@ -49,7 +44,7 @@ namespace SearchAlpha.Web.Controllers
 
                 foreach (var option in result.value)
                 {
-                    options.Add((string)option["@search.text"] + " (" + (string)option["productNumber"] + ")");
+                    options.Add((string) option["@search.text"]);// + " (" + (string)option["organisationName"] + ")");
                 }
             }
 

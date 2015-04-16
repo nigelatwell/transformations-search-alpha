@@ -1,4 +1,7 @@
-﻿
+﻿@using System.Web.UI.WebControls
+@using SearchAlpha.Web.AzureHelpers;
+
+
 @{
     ViewBag.Title = "Search Alpha";
 }
@@ -13,7 +16,11 @@ else
 {
     <div class="container">
         <form action="/Home/Search" method="get">
-            <input type="search" name="q" id="q" value="@ViewBag.searchString" autocomplete="off" size="100" /> <button type="submit">Search</button>
+            <input type="search" name="q" id="q" value="@ViewBag.searchString" autocomplete="on" size="100" /> 
+            <button type="submit">Search</button>
+            <button type="reset">Reset</button>
+            <input type="hidden" name="organisationType" id="organisationType" value="@ViewBag.organisationType" />   
+
             @*<input type="hidden" name="color" id="color" value="@ViewBag.color" />
             <input type="hidden" name="category" id="category" value="@ViewBag.category" />
             <input type="hidden" name="priceFrom" id="priceFrom" value="@ViewBag.priceFrom" />
@@ -26,15 +33,32 @@ else
     {
         <div class="container">
             <div class="row">
-                <div class="col-md-8">
+                <div class="col-md-4">
+                    <p></p>
+                                       
+                    <label>Organisation Type:</label>
+                    <ul>
+                        @foreach (var organisationTypeFacet in Model["@search.facets"].organisationType)
+                        {
+                            <li><a href="#" onclick="document.getElementById('organisationType').value='@organisationTypeFacet.value'; document.forms[0].submit(); return false;">@organisationTypeFacet.value</a> (@organisationTypeFacet.count)</li>
+                        }
+                    </ul>
+
+
+                    <a class="btn btn-default">Clear All Filters</a>
+                </div>
+                <div class="col-md-6">
                     <h2>Search results for '@ViewBag.searchString'</h2>
                     <p>@Model["@odata.count"] search results found</p>
+                    
+
                    
-                            @foreach (var result in Model.value)
+                    @foreach (var result in Model.value)
                             {
                                 <div class="panel panel-default">
-
-                                    <h3><b>@result.organisationName</b> (@result.organisationType)</h3>
+                                    
+                                    <h4><a href="@string.Format(@"http://www.nhs.uk/Services/{0}/Overview/DefaultView.aspx?id={1}", OrganisationTypeMapper.GetOrganisationTypeForPIMSUrl(@result.organisationType.ToString()), @result.nacsCode)">@result.organisationName</a></h4>                                    
+                                    
                                     @if (!string.IsNullOrEmpty(result.url.ToString()))
                                     {
                                         <a href="@result.url">@result.url</a>
@@ -76,16 +100,18 @@ else
                                     </p>
                                 </div>
                             }
+                    
+                  
 
-    
+   
                 </div>
-                <div class="col-md-4">
-                    @*<p>
-                        Sort -
-                        <a href="#" onclick="document.getElementById('sort').value=null; document.forms[0].submit(); return false;">by relevance</a>
-                        <a href="#" onclick="document.getElementById('sort').value='listPrice'; document.forms[0].submit(); return false;">by list price</a>
-                        <a href="#" onclick="document.getElementById('sort').value='color'; document.forms[0].submit(); return false;">by color</a>
-                    </p>*@
+                <div class="col-md-2">
+                    <p>
+                        @*Sort -
+    <a href="#" onclick="document.getElementById('sort').value=null; document.forms[0].submit(); return false;">by relevance</a>
+    <a href="#" onclick="document.getElementById('sort').value='listPrice'; document.forms[0].submit(); return false;">by list price</a>*@
+                        @*<a href="#" onclick="document.getElementById('sort').value='organisationType'; document.forms[0].submit(); return false;">by Organisation Type</a>*@
+                    </p>
                 </div>
             </div>
         </div>
@@ -93,9 +119,5 @@ else
 }
 
 @section Scripts {
-    <script>
-        $(function() {
-            $("#q").autocomplete({ source: "/home/suggest" });
-        });
-    </script>
+<script src="~/Scripts/searchalpha.js"></script>
 }

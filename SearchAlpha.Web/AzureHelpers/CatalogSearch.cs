@@ -3,7 +3,7 @@ using System.Configuration;
 using System.Globalization;
 using System.Net.Http;
 
-namespace SearchAlpha.Web.Controllers
+namespace SearchAlpha.Web.AzureHelpers
 {
     public class CatalogSearch
     {
@@ -28,15 +28,15 @@ namespace SearchAlpha.Web.Controllers
             }
         }
 
-        public dynamic Search(string searchText)
+        public dynamic Search(string searchText, string organisationType, string sort)
         {
             string search = "&search=" + Uri.EscapeDataString(searchText);
-            //string facets = "&facet=color&facet=categoryName&facet=listPrice,values:10|25|100|500|1000|2500";
+            string facets = "&facet=organisationType";
             //string paging = "&$top=10";
-            //string filter = BuildFilter(color, category, priceFrom, priceTo);
-            //string orderby = BuildSort(sort);
+            string filter = BuildFilter(organisationType);
+            string orderby = BuildSort(sort);
 
-            Uri uri = new Uri(_serviceUri, "/indexes/organisations/docs?$count=true" + search);
+            var uri = new Uri(_serviceUri, "/indexes/organisations/docs?$count=true" + search + facets + filter + orderby);
             HttpResponseMessage response = AzureSearchHelper.SendSearchRequest(_httpClient, HttpMethod.Get, uri);
             AzureSearchHelper.EnsureSuccessfulSearchResponse(response);
 
@@ -46,7 +46,7 @@ namespace SearchAlpha.Web.Controllers
         public dynamic Suggest(string searchText)
         {
             // we still need a default filter to exclude discontinued products from the suggestions
-            Uri uri = new Uri(_serviceUri, "/indexes/catalog/docs/suggest?$filter=discontinuedDate eq null&$select=productNumber&search=" + Uri.EscapeDataString(searchText));
+            var uri = new Uri(_serviceUri, "/indexes/organisations/docs/suggest?search=" + Uri.EscapeDataString(searchText));
             HttpResponseMessage response = AzureSearchHelper.SendSearchRequest(_httpClient, HttpMethod.Get, uri);
             AzureSearchHelper.EnsureSuccessfulSearchResponse(response);
 
@@ -61,7 +61,7 @@ namespace SearchAlpha.Web.Controllers
             }
 
             // could also add asc/desc if we want to allow both sorting directions
-            if (sort == "listPrice" || sort == "color")
+            if (sort == "listPrice" || sort == "organisationType")
             {
                 return "&$orderby=" + sort;
             }
@@ -69,32 +69,33 @@ namespace SearchAlpha.Web.Controllers
             throw new Exception("Invalid sort order");
         }
 
-        private string BuildFilter(string color, string category, double? priceFrom, double? priceTo)
+        private string BuildFilter(string organisationType)
         {
             // carefully escape and combine input for filters, injection attacks that are typical in SQL
             // also apply here. No "DROP TABLE" risk, but a well injected "or" can cause unwanted disclosure
 
-            string filter = "&$filter=discontinuedDate eq null";
+            //string filter = "&$filter=discontinuedDate eq null";
+            string filter = "";
 
-            if (!string.IsNullOrWhiteSpace(color))
+            if (!string.IsNullOrWhiteSpace(organisationType))
             {
-                filter += " and color eq '" + EscapeODataString(color) + "'";
+                filter += "&$filter=organisationType eq '" + EscapeODataString(organisationType) + "'";
             }
 
-            if (!string.IsNullOrWhiteSpace(category))
-            {
-                filter += " and categoryName eq '" + EscapeODataString(category) + "'";
-            }
+            //if (!string.IsNullOrWhiteSpace(category))
+            //{
+            //    filter += " and categoryName eq '" + EscapeODataString(category) + "'";
+            //}
 
-            if (priceFrom.HasValue)
-            {
-                filter += " and listPrice ge " + priceFrom.Value.ToString(CultureInfo.InvariantCulture);
-            }
+            //if (priceFrom.HasValue)
+            //{
+            //    filter += " and listPrice ge " + priceFrom.Value.ToString(CultureInfo.InvariantCulture);
+            //}
 
-            if (priceTo.HasValue && priceTo > 0)
-            {
-                filter += " and listPrice le " + priceTo.Value.ToString(CultureInfo.InvariantCulture);
-            }
+            //if (priceTo.HasValue && priceTo > 0)
+            //{
+            //    filter += " and listPrice le " + priceTo.Value.ToString(CultureInfo.InvariantCulture);
+            //}
 
             return filter;
         }
